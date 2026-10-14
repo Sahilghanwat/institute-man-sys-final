@@ -1,0 +1,20 @@
+import { Component, OnInit, inject } from '@angular/core'; import { CommonModule } from '@angular/common'; import { FormsModule } from '@angular/forms'; import { Router, RouterLink } from '@angular/router'; import { ApiService } from '../core/api.service'; import { StudentRequest, Trainer, TrainerRequest } from '../core/models';
+@Component({standalone:true,imports:[CommonModule,FormsModule,RouterLink],template:`
+<section class="form-card wide"><a routerLink="/" class="back">← Home</a><h1>Student Registration</h1><p class="muted">Fill in your details to create a student account.</p><form (ngSubmit)="submit()" class="form-grid">
+<label>Full name<input name="name" [(ngModel)]="form.name" required></label><label>City<input name="city" [(ngModel)]="form.city" required></label><label>Email<input name="email" type="email" [(ngModel)]="form.email" required email></label><label>Password<input name="password" type="password" [(ngModel)]="form.password" required minlength="8"></label><label>Course name<input name="courseName" [(ngModel)]="form.courseName" required></label><label>Trainer<select name="trainerId" [(ngModel)]="form.trainerId" required><option [ngValue]="0" disabled>Select a trainer</option><option *ngFor="let t of trainers" [ngValue]="t.id">{{t.name}} — {{t.courseName}}</option></select></label>
+<p class="error span-all" *ngIf="error">{{error}}</p><p class="success span-all" *ngIf="success">{{success}}</p><button class="button span-all" [disabled]="busy||!trainers.length">{{busy?'Registering…':'Create Student Account'}}</button></form><p class="small" *ngIf="!trainers.length">No trainers found. Register a trainer first.</p></section>
+`}) export class RegisterStudentComponent implements OnInit {
+ private api=inject(ApiService);private router=inject(Router); trainers:Trainer[]=[];error='';success='';busy=false;
+ form:StudentRequest={name:'',city:'',email:'',password:'',courseName:'',trainerId:0};
+ ngOnInit(){this.api.trainers().subscribe({next:x=>this.trainers=x,error:()=>this.trainers=[]});}
+ submit(){this.error='';this.busy=true;this.api.registerStudent(this.form).subscribe({next:()=>{this.success='Registration successful. You can now log in.';setTimeout(()=>this.router.navigate(['/login/student']),900);},error:(e:Error)=>{this.error=e.message;this.busy=false;},complete:()=>this.busy=false});}
+}
+@Component({standalone:true,imports:[CommonModule,FormsModule,RouterLink],template:`
+<section class="form-card wide"><a routerLink="/" class="back">← Home</a><h1>Trainer Registration</h1><p class="muted">Create your trainer profile.</p><form (ngSubmit)="submit()" class="form-grid">
+<label>Full name<input name="name" [(ngModel)]="form.name" required></label><label>Class / batch name<input name="className" [(ngModel)]="form.className" required></label><label>Course name<input name="courseName" [(ngModel)]="form.courseName" required></label><label>Experience (years)<input name="experience" type="number" min="0" [(ngModel)]="form.experience" required></label><label>Email<input name="email" type="email" [(ngModel)]="form.email" required email></label><label>Employee number<input name="employeeNumber" [(ngModel)]="form.employeeNumber" required></label><label class="span-all">Password<input name="password" type="password" [(ngModel)]="form.password" required minlength="8"></label>
+<p class="error span-all" *ngIf="error">{{error}}</p><p class="success span-all" *ngIf="success">{{success}}</p><button class="button span-all" [disabled]="busy">{{busy?'Registering…':'Create Trainer Account'}}</button></form></section>
+`}) export class RegisterTrainerComponent {
+ private api=inject(ApiService);private router=inject(Router);error='';success='';busy=false;
+ form:TrainerRequest={name:'',className:'',courseName:'',experience:0,email:'',employeeNumber:'',password:''};
+ submit(){this.error='';this.busy=true;this.api.registerTrainer(this.form).subscribe({next:()=>{this.success='Registration successful. You can now log in.';setTimeout(()=>this.router.navigate(['/login/trainer']),900);},error:(e:Error)=>{this.error=e.message;this.busy=false;},complete:()=>this.busy=false});}
+}

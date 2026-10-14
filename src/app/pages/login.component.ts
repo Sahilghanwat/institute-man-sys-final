@@ -1,0 +1,11 @@
+import { Component, inject } from '@angular/core'; import { CommonModule } from '@angular/common'; import { FormsModule } from '@angular/forms'; import { ActivatedRoute, Router, RouterLink } from '@angular/router'; import { ApiService } from '../core/api.service'; import { AuthService } from '../core/auth.service';
+@Component({standalone:true,imports:[CommonModule,FormsModule,RouterLink],template:`
+<section class="form-card"><a routerLink="/" class="back">← Home</a><h1>{{title}} Login</h1><p class="muted">Enter the email and password for your account.</p>
+<form (ngSubmit)="submit()"><label>Email<input name="email" type="email" [(ngModel)]="email" required email autocomplete="username"></label><label>Password<input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password"></label><p class="error" *ngIf="error">{{error}}</p><button class="button full" [disabled]="busy">{{busy?'Signing in…':'Login'}}</button></form>
+<p class="small" *ngIf="role==='student'">No account? <a routerLink="/register/student">Register as student</a></p><p class="small" *ngIf="role==='trainer'">No account? <a routerLink="/register/trainer">Register as trainer</a></p><p class="small" *ngIf="role==='admin'">Demo admin: admin@institute.local / Admin@12345</p></section>
+`}) export class LoginComponent {
+ private route=inject(ActivatedRoute); private api=inject(ApiService); private auth=inject(AuthService); private router=inject(Router);
+ role=this.route.snapshot.paramMap.get('role')||'student'; title=this.role.charAt(0).toUpperCase()+this.role.slice(1); email='';password='';error='';busy=false;
+ submit(){this.error='';const email=this.email.trim();const password=this.password;if(!email||!password.trim()){this.error='Enter both email and password.';return;}this.busy=true;const body={email,password};const request=this.role==='student'?this.api.loginStudent(body):this.role==='trainer'?this.api.loginTrainer(body):this.api.loginAdmin(body);
+ request.subscribe({next:()=>{this.auth.setRole(this.role.toUpperCase());this.router.navigate([this.role==='student'?'/student':this.role==='trainer'?'/trainer':'/admin']);},error:(e:Error)=>{this.error=e.message;this.busy=false;},complete:()=>this.busy=false});}
+}
